@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>PrepDay AI — Your Day-Structured Cooking Planner</title>
+  <meta name="description" content="Generate an interactive cooking to-do list, timing timeline, and categorized grocery list tailored precisely to your schedule, energy, and preferences.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Prevent Theme FOUC -->
+  <script>
+    {
+      const savedTheme = localStorage.getItem("color-scheme");
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="/CookingToDoList_SG/assets/index-bMjFvEQz.js"></script>
+  <link rel="stylesheet" crossorigin href="/CookingToDoList_SG/assets/index-EhrBt8Qv.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-logo-section">
+        <div class="app-icon">🍳</div>
+        <div>
+          <h1>PrepDay AI</h1>
+          <p class="header-subtitle">Tailored Cooking Plans for Your Day</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button id="themeToggleBtn" class="control-btn" aria-label="Toggle Light/Dark Theme" title="Toggle Theme">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+        </button>
+        <button id="openSettingsBtn" class="control-btn" aria-label="Open Settings" title="Configure API Key">
+          <span class="gear-icon">⚙️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main App Layout -->
+    <main class="app-main">
+      <!-- Left Column: Planner Input Form -->
+      <section class="planner-panel glass-panel">
+        <h2 class="panel-title">📅 Plan Your Day</h2>
+        
+        <form id="plannerForm" class="planner-form">
+          <!-- Text Area for Schedule Description -->
+          <div class="form-group">
+            <label for="dayDescription">How does your day look?</label>
+            <textarea id="dayDescription" placeholder="e.g. I have a hectic morning with meetings until 1 PM, then a relaxed afternoon. I'd love a quick lunch, but a cozy, comforting dinner. We're cooking for two." required></textarea>
+            <span class="form-help">Describe your schedule, energy level changes, or general vibe.</span>
+          </div>
+
+          <!-- Radio Selection Buttons (Segmented Controls) -->
+          <div class="form-group">
+            <label>Energy Level</label>
+            <div class="segmented-control">
+              <input type="radio" id="energyLow" name="energy" value="low">
+              <label for="energyLow">😴 Low</label>
+              
+              <input type="radio" id="energyMedium" name="energy" value="medium" checked>
+              <label for="energyMedium">🙂 Medium</label>
+              
+              <input type="radio" id="energyHigh" name="energy" value="high">
+              <label for="energyHigh">⚡ High</label>
+            </div>
+          </div>
+
+          <!-- Dietary Restrictions -->
+          <div class="form-group">
+            <label for="dietPreference">Dietary Style</label>
+            <select id="dietPreference" class="styled-select">
+              <option value="none">Everything / No Restrictions</option>
+              <option value="vegetarian">Vegetarian 🥦</option>
+              <option value="vegan">Vegan 🌱</option>
+              <option value="gluten-free">Gluten-Free 🌾</option>
+              <option value="keto">Keto 🥓</option>
+              <option value="mediterranean">Mediterranean 🥗</option>
+            </select>
+          </div>
+
+          <!-- Portions -->
+          <div class="form-group">
+            <label for="portions">Cooking Portions</label>
+            <select id="portions" class="styled-select">
+              <option value="1 person">Single Portion (1 Person)</option>
+              <option value="2 people" selected>Couple (2 People)</option>
+              <option value="family (4 people)">Family (4 People)</option>
+            </select>
+          </div>
+
+          <!-- Fridge Cleanout (Ingredients on Hand) -->
+          <div class="form-group">
+            <label for="fridgeIngredients">Ingredients to use up (optional)</label>
+            <input type="text" id="fridgeIngredients" placeholder="e.g. spinach, cherry tomatoes, stale bread" />
+            <span class="form-help">Help minimize waste by incorporating these items.</span>
+          </div>
+
+          <!-- Generator Mode & Trigger -->
+          <div class="form-group submit-group">
+            <div class="demo-mode-toggle">
+              <label class="switch">
+                <input type="checkbox" id="mockModeToggle">
+                <span class="slider round"></span>
+              </label>
+              <span id="demoModeLabel">Demo/Mock Mode (No API key needed)</span>
+            </div>
+
+            <button type="submit" id="generatePlanBtn" class="primary-btn">
+              <span>Generate Cooking Plan</span>
+              <span class="btn-arrow">➔</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Interactive Output Display -->
+      <section id="outputPanel" class="output-panel glass-panel">
+        <!-- Default Empty State -->
+        <div id="outputEmptyState" class="empty-state">
+          <div class="empty-state-illustration">🍲</div>
+          <h3>Your Cooking Journey Begins Here</h3>
+          <p>Tell PrepDay AI about your schedule, energy level, and preferences, and we will generate a unified cooking timeline, grocery checklist, and structured preparation plans tailored precisely to your day.</p>
+          <div class="empty-state-actions">
+            <button id="loadExampleBtn" class="secondary-btn">Load Demo Example</button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="outputLoadingState" class="loading-state hidden">
+          <div class="pan-loader-wrapper">
+            <div class="pan-loader">
+              <div class="pan"></div>
+              <div class="pan-handle"></div>
+              <div class="pancake"></div>
+            </div>
+          </div>
+          <h3 id="loadingStatusText">Prepping ingredients...</h3>
+          <p class="loading-subtext">Gemini is structuring your tailored cooking schedule...</p>
+        </div>
+
+        <!-- Populated Results Content -->
+        <div id="outputContent" class="output-content hidden">
+          <!-- Plan Header with Quick Details -->
+          <div class="plan-header">
+            <div>
+              <h2 id="planTitle">Daily Prep Plan</h2>
+              <p id="planSubtitle" class="plan-subtitle">Tailored for your energy & schedule</p>
+            </div>
+            <div class="plan-actions">
+              <button id="copyAllBtn" class="icon-btn" title="Copy text summary">📋 Copy</button>
+              <button id="resetPlanBtn" class="icon-btn danger" title="Clear plan">🗑️ Clear</button>
+            </div>
+          </div>
+
+          <!-- Sub-navigation Tabs for Sections -->
+          <nav class="section-tabs" aria-label="Plan Sections">
+            <button class="tab-btn active" data-target="mealsSection">🍳 Meals Checklist</button>
+            <button class="tab-btn" data-target="grocerySection">🥦 Grocery List</button>
+            <button class="tab-btn" data-target="timelineSection">⏱️ Timeline</button>
+            <button class="tab-btn" data-target="tipsSection">💡 Strategy & Tips</button>
+          </nav>
+
+          <!-- Tab Pane 1: Meals Checklist -->
+          <div id="mealsSection" class="tab-pane active">
+            <div class="meals-list" id="mealsListContainer">
+              <!-- Dynamically Populated Meal Cards -->
+            </div>
+          </div>
+
+          <!-- Tab Pane 2: Grocery List -->
+          <div id="grocerySection" class="tab-pane">
+            <div class="grocery-card">
+              <div class="grocery-header">
+                <h3>Shopping Checklist</h3>
+                <button id="copyGroceryBtn" class="secondary-btn btn-sm">Copy List</button>
+              </div>
+              
+              <div class="grocery-columns" id="groceryContainer">
+                <!-- Dynamically Populated Grocery Categories -->
+              </div>
+
+              <!-- Add custom grocery item input -->
+              <form id="addCustomItemForm" class="add-item-form">
+                <input type="text" id="customItemInput" placeholder="Add custom item (e.g. Paper towels)" required>
+                <button type="submit" class="secondary-btn">Add</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Tab Pane 3: Timeline -->
+          <div id="timelineSection" class="tab-pane">
+            <div class="timeline-card">
+              <h3>⏱️ Multitasking Workflow</h3>
+              <p class="timeline-intro">A step-by-step cooking strategy to run your kitchen efficiently and fit your schedule.</p>
+              <div class="timeline-flow" id="timelineContainer">
+                <!-- Dynamically Populated Timeline Steps -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Pane 4: Tips and Strategy -->
+          <div id="tipsSection" class="tab-pane">
+            <div class="tips-grid">
+              <div class="tips-card">
+                <h4>🗑️ Waste Reduction & Prep-Ahead</h4>
+                <ul id="wasteTipsContainer" class="tips-list">
+                  <!-- Dynamically Populated Waste Tips -->
+                </ul>
+              </div>
+              <div class="tips-card">
+                <h4>🧠 Energy & Wellness Insight</h4>
+                <p id="energyExplanationText" class="tips-explanation">
+                  <!-- Dynamically Populated Energy Info -->
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>PrepDay AI © 2026. Made for cooking, organized around you.</p>
+    </footer>
+  </div>
+
+  <!-- Dialog for Settings (API Key Configuration) -->
+  <dialog id="settingsDialog" class="settings-dialog">
+    <div class="dialog-header">
+      <h3>⚙️ API Settings</h3>
+      <button id="closeSettingsBtn" class="close-btn" aria-label="Close settings">×</button>
+    </div>
+    <div class="dialog-body">
+      <p>Configure your Gemini API key to generate customized cooking plans.</p>
+      
+      <div class="form-group">
+        <label for="apiKeyInput">Gemini API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+        <div class="api-help-links">
+          <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Get a free API Key from Google AI Studio ↗</a>
+        </div>
+      </div>
+
+      <div class="dialog-status-message success hidden" id="apiStatusMessage">
+        API Key saved successfully!
+      </div>
+      
+      <div class="dialog-actions">
+        <button id="saveApiKeyBtn" class="primary-btn btn-full">Save Key</button>
+        <button id="clearApiKeyBtn" class="secondary-btn btn-full danger">Remove Saved Key</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Import JS Bundles -->
+</body>
+</html>
